@@ -1519,4 +1519,4 @@ class AOSModel(torch.nn.Module):
         Returns:
             (torch.Tensor): List of detections.
         """
-        return self.model(x).view(1, -1, 6);
+        return self.model(x).transpose(1, -1);
