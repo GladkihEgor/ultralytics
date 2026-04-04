@@ -461,7 +461,7 @@ class Exporter:
         y = None
         for _ in range(2):  # dry runs
             m = NMSModel(model, self.args) if self.args.nms and not coreml and not imx else model
-            y = PermuteModel(m)(im) if self.args.hwc else m(im)
+            y = AOSModel(PermuteModel(m))(im) if self.args.hwc else m(im)
         if self.args.half and onnx and self.device.type != "cpu":
             im, model = im.half(), model.half()  # to FP16
 
@@ -633,7 +633,7 @@ class Exporter:
             self.args.opset = opset  # for NMSModel
 
         m = NMSModel(self.model, self.args) if self.args.nms else self.model
-        m = PermuteModel(m) if self.args.hwc else m
+        m = AOSModel(PermuteModel(m)) if self.args.hwc else m
         with arange_patch(self.args):
             torch2onnx(
                 m,
@@ -1494,3 +1494,29 @@ class PermuteModel(torch.nn.Module):
             (torch.Tensor): List of detections.
         """
         return self.model(torch.div(torch.permute(x, (0, 3, 1, 2)).contiguous(), 255))
+
+
+class AOSModel(torch.nn.Module):
+    """Model wrapper for permute model input from CHW to HWC."""
+
+    def __init__(self, model):
+        """
+        Initialize the AOSModel.
+
+        Args:
+            model (torch.nn.Module): The model to wrap for input transpose.
+        """
+        super().__init__()
+        self.model = model
+
+    def forward(self, x):
+        """
+        Perform inference with input transpose.
+
+        Args:
+            x (torch.Tensor): input tensor.
+
+        Returns:
+            (torch.Tensor): List of detections.
+        """
+        return self.model(x).view(1, -1, 6);
