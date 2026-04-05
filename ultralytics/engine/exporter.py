@@ -1493,7 +1493,7 @@ class PermuteModel(torch.nn.Module):
         Returns:
             (torch.Tensor): List of detections.
         """
-        return self.model(torch.div(torch.permute(x, (0, 3, 1, 2)).contiguous(), 255))
+        return self.model(torch.div(x.permute(0, 3, 1, 2).flip(1).contiguous(), 255))
 
 
 class AOSModel(torch.nn.Module):
@@ -1519,4 +1519,4 @@ class AOSModel(torch.nn.Module):
         Returns:
             (torch.Tensor): List of detections.
         """
-        return self.model(x).transpose(1, -1);
+        return self.model(x).transpose(1, -1)
